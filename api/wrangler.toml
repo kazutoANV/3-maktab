@@ -1,0 +1,29 @@
+name = "maktab3-api"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[[durable_objects.bindings]]
+name = "HUB"
+class_name = "Hub"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Hub"]
+
+[vars]
+DEV_USERNAME = "kazuto"        # developer bo'ladigan username
+BOT_USERNAME = ""              # Telegram bot username (@siz, masalan: maktab3_bot)
+
+# Maxfiy kalitlar:
+#   npx wrangler secret put AUTH_SECRET   (uzun tasodifiy matn)
+#   npx wrangler secret put BOT_TOKEN     (BotFather bergan token)
+
+# AI (Cloudflare Workers AI) — Maktabdan so'ra, Quiz, Planner, repetitor, SnapHomework, ariza tahlili
+[ai]
+binding = "AI"
+
+# Har kuni 09:00 (Toshkent) uy vazifasi eslatmalari
+[triggers]
+crons = ["0 4 * * *"]
+
+# Qo'shimcha maxfiy kalit: npx wrangler secret put HOOK_SECRET   (Telegram webhook uchun, harf/raqam/_/-)
