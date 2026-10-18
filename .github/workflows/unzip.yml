@@ -1,24 +1,60 @@
-name: Unzip ZIP
+
+name: Unzip Website ZIP
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   unzip:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
 
-      - name: Unzip archive
+      - name: Install unzip
+        run: sudo apt-get update && sudo apt-get install -y unzip rsync
+
+      - name: Extract website
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y unzip
-          unzip -o maktab3-github-v13.zip -d extracted
+          set -e
 
-      - name: Commit extracted files
+          ZIP="maktab3-github-v13.zip"
+
+          if [ ! -f "$ZIP" ]; then
+            echo "ERROR: $ZIP not found in repository root"
+            exit 1
+          fi
+
+          mkdir -p /tmp/website
+          unzip -o "$ZIP" -d /tmp/website
+
+          INDEX=$(find /tmp/website -type f -iname "index.html" -print -quit)
+
+          if [ -z "$INDEX" ]; then
+            echo "ERROR: index.html not found inside ZIP"
+            exit 1
+          fi
+
+          SOURCE=$(dirname "$INDEX")
+          echo "Website source: $SOURCE"
+
+          rsync -av \
+            --exclude='.git/' \
+            "$SOURCE/" ./
+
+          test -f index.html
+
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add extracted
-          git commit -m "Extract ZIP files" || echo "No changes"
-          git push
+          git add -A
+          git diff --cached --quiet || \
+            (git commit -m "Extract website files" && git push origin HEAD:main)
